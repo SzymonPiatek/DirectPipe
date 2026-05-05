@@ -65,6 +65,13 @@ export class Peer {
     channel.binaryType = 'arraybuffer';
     channel.bufferedAmountLowThreshold = 1 * 1024 * 1024;
     this.channel = channel;
-    channel.onopen = () => this.onChannelReady?.(channel);
+
+    // ondatachannel on the receiver fires when the channel is already 'open',
+    // so we must handle both states — otherwise onopen never fires for the receiver.
+    if (channel.readyState === 'open') {
+      this.onChannelReady?.(channel);
+    } else {
+      channel.onopen = () => this.onChannelReady?.(channel);
+    }
   }
 }
