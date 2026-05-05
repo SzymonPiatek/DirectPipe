@@ -34,9 +34,10 @@ export function useRoom(roomId: string): RoomState {
       const peer = new Peer(iceServers, signaling, assignedRole);
       peerRef.current = peer;
 
-      peer.onChannelReady = (ch) => {
+      peer.onChannelReady = async (ch) => {
         setChannel(ch);
-        setStatus('p2p');
+        const type = await peer.detectConnectionType();
+        setStatus(type);
       };
 
       peer.onStateChange = (state) => {

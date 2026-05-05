@@ -1,19 +1,23 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { sendFile } from '@/lib/transfer/sender';
-import { createReceiver, downloadBlob } from '@/lib/transfer/receiver';
+import { Receiver } from '@/lib/transfer/receiver';
+import { isFsaaSupported, openFsaaWriter, createBlobWriter, LARGE_FILE_THRESHOLD } from '@/lib/transfer/writer';
 import type { TransferMeta } from '@/lib/transfer/protocol';
 
-export type TransferStatus = 'idle' | 'sending' | 'receiving' | 'done' | 'error';
+export type TransferStatus = 'idle' | 'sending' | 'incoming' | 'receiving' | 'done' | 'error';
 
 export interface TransferState {
   status: TransferStatus;
   fileName: string;
   totalBytes: number;
   transferredBytes: number;
-  /** Smoothed bytes-per-second (EMA, ~1 s window). */
+  /** Smoothed bytes/s (EMA, ~1 s window). */
   rate: number;
+  /** True when FSAA is available and the user must click "Save as…". */
+  needsSavePicker: boolean;
 }
 
 const INITIAL_STATE: TransferState = {
@@ -22,15 +26,17 @@ const INITIAL_STATE: TransferState = {
   totalBytes: 0,
   transferredBytes: 0,
   rate: 0,
+  needsSavePicker: false,
 };
 
-/** Manages file send/receive over an RTCDataChannel. */
 export function useTransfer(channel: RTCDataChannel | null) {
   const [state, setState] = useState<TransferState>(INITIAL_STATE);
 
+  const receiverRef = useRef<Receiver | null>(null);
+  const incomingMetaRef = useRef<TransferMeta | null>(null);
   const rateRef = useRef({ lastBytes: 0, lastTime: 0, ema: 0 });
 
-  function updateRate(bytes: number) {
+  function updateRate(bytes: number): number {
     const now = Date.now();
     const r = rateRef.current;
     const dt = (now - r.lastTime) / 1000;
@@ -43,59 +49,83 @@ export function useTransfer(channel: RTCDataChannel | null) {
     return r.ema;
   }
 
-  // Wire up receiver when channel opens
   useEffect(() => {
     if (!channel) return;
 
     rateRef.current = { lastBytes: 0, lastTime: Date.now(), ema: 0 };
 
-    const { handleMessage } = createReceiver({
-      onMeta: (meta: TransferMeta) => {
+    const receiver = new Receiver({
+      onMeta: (meta) => {
+        incomingMetaRef.current = meta;
+        const needsFsaa = isFsaaSupported();
+
         setState({
-          status: 'receiving',
+          status: 'incoming',
           fileName: meta.name,
           totalBytes: meta.size,
           transferredBytes: 0,
           rate: 0,
+          needsSavePicker: needsFsaa,
         });
+
+        if (!needsFsaa) {
+          if (meta.size > LARGE_FILE_THRESHOLD) {
+            toast.warning('File exceeds 2 GB — use Chrome for large file support.');
+          }
+          // Auto-proceed with Blob accumulation
+          const writer = createBlobWriter(meta);
+          receiver.acceptSave(writer).then(() => {
+            setState((prev) => ({ ...prev, status: 'receiving' }));
+          });
+        }
       },
       onProgress: (received) => {
         setState((prev) => ({
           ...prev,
+          status: 'receiving',
           transferredBytes: received,
           rate: updateRate(received),
         }));
       },
-      onDone: (blob, name) => {
-        downloadBlob(blob, name);
+      onDone: () => {
         setState((prev) => ({ ...prev, status: 'done', transferredBytes: prev.totalBytes }));
       },
     });
 
-    channel.onmessage = handleMessage;
+    receiverRef.current = receiver;
+    channel.onmessage = receiver.handleMessage;
+
+    return () => {
+      receiverRef.current = null;
+      incomingMetaRef.current = null;
+    };
   }, [channel]);
+
+  /** Called when user clicks "Save as…" (FSAA path). */
+  const accept = useCallback(async () => {
+    const meta = incomingMetaRef.current;
+    const receiver = receiverRef.current;
+    if (!meta || !receiver) return;
+
+    try {
+      const writer = await openFsaaWriter(meta.name);
+      await receiver.acceptSave(writer);
+      setState((prev) => ({ ...prev, status: 'receiving', needsSavePicker: false }));
+    } catch {
+      // User cancelled the picker — stay in 'incoming' so they can try again
+    }
+  }, []);
 
   const send = useCallback(
     async (file: File) => {
       if (!channel) return;
 
       rateRef.current = { lastBytes: 0, lastTime: Date.now(), ema: 0 };
-
-      setState({
-        status: 'sending',
-        fileName: file.name,
-        totalBytes: file.size,
-        transferredBytes: 0,
-        rate: 0,
-      });
+      setState({ status: 'sending', fileName: file.name, totalBytes: file.size, transferredBytes: 0, rate: 0, needsSavePicker: false });
 
       try {
         await sendFile(channel, file, (sent) => {
-          setState((prev) => ({
-            ...prev,
-            transferredBytes: sent,
-            rate: updateRate(sent),
-          }));
+          setState((prev) => ({ ...prev, transferredBytes: sent, rate: updateRate(sent) }));
         });
         setState((prev) => ({ ...prev, status: 'done', transferredBytes: prev.totalBytes }));
       } catch {
@@ -105,5 +135,5 @@ export function useTransfer(channel: RTCDataChannel | null) {
     [channel],
   );
 
-  return { state, send };
+  return { state, send, accept };
 }

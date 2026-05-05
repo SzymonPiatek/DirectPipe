@@ -49,7 +49,7 @@ export default function RoomPage() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { status, role, channel } = useRoom(id);
-  const { state: transfer, send } = useTransfer(channel);
+  const { state: transfer, send, accept } = useTransfer(channel);
 
   useEffect(() => {
     setShareUrl(`${window.location.origin}/r/${id}`);
@@ -92,7 +92,7 @@ export default function RoomPage() {
             </p>
           )}
 
-          {/* Sender UI */}
+          {/* Sender — drop zone */}
           {connected && role === 'initiator' && transfer.status === 'idle' && (
             <div
               className={`flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed p-8 transition-colors ${
@@ -115,14 +115,30 @@ export default function RoomPage() {
             </div>
           )}
 
-          {/* Receiver idle */}
+          {/* Receiver — waiting */}
           {connected && role === 'receiver' && transfer.status === 'idle' && (
             <p className="text-sm text-muted-foreground text-center py-4">
               Waiting for the other person to send a file…
             </p>
           )}
 
-          {/* Progress */}
+          {/* Receiver — incoming file, needs save picker */}
+          {transfer.status === 'incoming' && transfer.needsSavePicker && (
+            <div className="flex flex-col items-center gap-3 rounded-lg border p-6 text-center">
+              <p className="text-sm font-medium">{transfer.fileName}</p>
+              <p className="text-xs text-muted-foreground">{formatBytes(transfer.totalBytes)}</p>
+              <Button onClick={accept}>Save as…</Button>
+            </div>
+          )}
+
+          {/* Receiver — incoming, auto-proceeding (Blob path) */}
+          {transfer.status === 'incoming' && !transfer.needsSavePicker && (
+            <p className="text-sm text-muted-foreground text-center py-2">
+              Preparing to receive <strong>{transfer.fileName}</strong>…
+            </p>
+          )}
+
+          {/* Progress bar */}
           {transferring && (
             <div className="flex flex-col gap-2">
               <div className="flex justify-between text-xs text-muted-foreground">
@@ -141,7 +157,6 @@ export default function RoomPage() {
             </div>
           )}
 
-          {/* Done */}
           {transfer.status === 'done' && (
             <p className="text-sm text-center text-green-600 dark:text-green-400 font-medium">
               {role === 'initiator' ? 'File sent.' : 'File received — check your downloads.'}

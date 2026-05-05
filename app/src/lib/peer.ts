@@ -57,6 +57,26 @@ export class Peer {
     await this.pc.addIceCandidate(candidate);
   }
 
+  /**
+   * Inspects the nominated ICE candidate pair to determine if traffic
+   * is flowing directly (p2p) or through a TURN relay.
+   */
+  async detectConnectionType(): Promise<'p2p' | 'relay'> {
+    try {
+      const stats = await this.pc.getStats();
+      for (const [, report] of stats) {
+        if (report.type !== 'candidate-pair') continue;
+        const pair = report as RTCIceCandidatePairStats;
+        if (!pair.nominated) continue;
+        const local = stats.get(pair.localCandidateId) as Record<string, unknown> | undefined;
+        if (local?.['candidateType'] === 'relay') return 'relay';
+      }
+    } catch {
+      // getStats() unavailable in some environments
+    }
+    return 'p2p';
+  }
+
   close(): void {
     this.pc.close();
   }
