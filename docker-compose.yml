@@ -1,0 +1,16 @@
+services:
+  api:
+    build: ./api
+    ports:
+      - '4000:4000'
+    env_file: ./envs/api.env
+    restart: unless-stopped
+
+  app:
+    build: ./app
+    ports:
+      - '3000:3000'
+    env_file: ./envs/app.env
+    depends_on:
+      - api
+    restart: unless-stopped
