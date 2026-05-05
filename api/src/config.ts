@@ -9,4 +9,6 @@ export const config = {
   logLevel: process.env.LOG_LEVEL ?? 'info',
   turnSecret: process.env.TURN_SECRET as string | undefined,
   turnHost: process.env.TURN_HOST ?? 'localhost',
+  /** Comma-separated list of allowed WebSocket origins. Empty = allow all (dev). */
+  allowedOrigins: process.env.ALLOWED_ORIGINS ?? '',
 } as const;

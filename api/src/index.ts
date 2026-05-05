@@ -29,7 +29,18 @@ app.get('/turn-credentials', turnRateLimit, (_req, res) => {
 });
 
 const server = createServer(app);
-const wss = new WebSocketServer({ server });
+
+const allowedOrigins = config.allowedOrigins
+  ? new Set(config.allowedOrigins.split(',').map((o) => o.trim()))
+  : null; // null = allow all (local dev)
+
+const wss = new WebSocketServer({
+  server,
+  verifyClient: ({ origin }: { origin: string }) => {
+    if (!allowedOrigins) return true;
+    return allowedOrigins.has(origin);
+  },
+});
 
 wss.on('connection', (ws) => handleConnection(ws, log));
 
