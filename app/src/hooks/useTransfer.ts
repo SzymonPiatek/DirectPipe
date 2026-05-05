@@ -75,20 +75,31 @@ export function useTransfer(channel: RTCDataChannel | null) {
           // Auto-proceed with Blob accumulation
           const writer = createBlobWriter(meta);
           receiver.acceptSave(writer).then(() => {
-            setState((prev) => ({ ...prev, status: 'receiving' }));
+            setState((prev) => {
+              if (prev.status === 'done') return prev;
+              return { ...prev, status: 'receiving' };
+            });
           });
         }
       },
       onProgress: (received) => {
-        setState((prev) => ({
-          ...prev,
-          status: prev.status === 'incoming' ? 'incoming' : 'receiving',
-          transferredBytes: received,
-          rate: updateRate(received),
-        }));
+        setState((prev) => {
+          if (prev.status === 'done') return prev;
+          return {
+            ...prev,
+            status: prev.status === 'incoming' ? 'incoming' : 'receiving',
+            transferredBytes: received,
+            rate: updateRate(received),
+          };
+        });
       },
       onDone: () => {
         setState((prev) => ({ ...prev, status: 'done', transferredBytes: prev.totalBytes }));
+        toast.success('File transfer complete!');
+      },
+      onError: (err) => {
+        setState((prev) => ({ ...prev, status: 'error' }));
+        toast.error(`Transfer error: ${err.message}`);
       },
     });
 
@@ -110,7 +121,10 @@ export function useTransfer(channel: RTCDataChannel | null) {
     try {
       const writer = await openFsaaWriter(meta.name);
       await receiver.acceptSave(writer);
-      setState((prev) => ({ ...prev, status: 'receiving', needsSavePicker: false }));
+      setState((prev) => {
+        if (prev.status === 'done') return prev;
+        return { ...prev, status: 'receiving', needsSavePicker: false };
+      });
     } catch {
       // User cancelled the picker — stay in 'incoming' so they can try again
     }
