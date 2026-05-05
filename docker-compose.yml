@@ -67,6 +67,7 @@ services:
       - app
     restart: unless-stopped
 
+
   gateway:
     image: nginx:alpine
     ports:
