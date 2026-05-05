@@ -1,4 +1,4 @@
-import { API_URL } from './env';
+import { getApiUrl } from './env';
 
 interface TurnCredentials {
   username: string;
@@ -15,7 +15,7 @@ const CACHE_KEY = 'directpipe:ice';
 const STUN_FALLBACK: RTCIceServer[] = [{ urls: 'stun:stun.l.google.com:19302' }];
 
 async function fetchTurnServers(): Promise<RTCIceServer[]> {
-  const res = await fetch(`${API_URL}/turn-credentials`);
+  const res = await fetch(`${getApiUrl()}/turn-credentials`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = (await res.json()) as TurnCredentials;
   return [{ urls: data.urls, username: data.username, credential: data.credential }];

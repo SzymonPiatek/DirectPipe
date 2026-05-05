@@ -1,4 +1,4 @@
-import { WS_URL } from './env';
+import { getWsUrl } from './env';
 
 export type PeerRole = 'initiator' | 'receiver';
 
@@ -26,7 +26,7 @@ export class SignalingClient {
   private handlers = new Set<MessageHandler>();
 
   connect(roomId: string): void {
-    this.ws = new WebSocket(WS_URL);
+    this.ws = new WebSocket(getWsUrl());
 
     this.ws.onopen = () => {
       this.ws!.send(JSON.stringify({ type: 'join', roomId }));
