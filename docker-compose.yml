@@ -1,3 +1,5 @@
+name: directpipe
+
 services:
   coturn:
     image: coturn/coturn:latest
@@ -19,23 +21,44 @@ services:
       --max-port=49252
       --no-multicast-peers
       --no-cli
-    env_file: ./envs/api.env
+    env_file:
+      - ./envs/shared.env
+      - ./envs/api.env
+    networks:
+      - app
     restart: unless-stopped
 
   api:
     build: ./api
     ports:
       - '127.0.0.1:4000:4000'
-    env_file: ./envs/api.env
+    env_file:
+      - ./envs/shared.env
+      - ./envs/api.env
     depends_on:
       - coturn
+    networks:
+      - app
+      - proxy
     restart: unless-stopped
 
   app:
     build: ./app
     ports:
       - '127.0.0.1:3002:3000'
-    env_file: ./envs/app.env
+    env_file:
+      - ./envs/shared.env
+      - ./envs/app.env
     depends_on:
       - api
+    networks:
+      - app
+      - proxy
     restart: unless-stopped
+
+networks:
+  app:
+    driver: bridge
+  proxy:
+    external: true
+    name: ${PROXY_NETWORK:-npm_proxy}
