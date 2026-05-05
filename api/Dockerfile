@@ -1,28 +1,34 @@
-FROM node:22-alpine AS builder
+FROM node:22-alpine AS base
 WORKDIR /app
-
 RUN corepack enable
 
+FROM base AS deps
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
+FROM deps AS builder
+ARG NODE_ENV=development
 COPY tsconfig.json ./
 COPY src ./src
-RUN pnpm build
+RUN if [ "$NODE_ENV" = "production" ]; then pnpm build; else mkdir -p dist; fi
 
-
-FROM node:22-alpine AS runtime
-WORKDIR /app
-
-RUN corepack enable && \
-    addgroup -S app && adduser -S app -G app
+FROM base AS runner
+ARG NODE_ENV=development
+ENV NODE_ENV=${NODE_ENV}
 
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile --prod
+RUN if [ "$NODE_ENV" = "production" ]; \
+    then pnpm install --frozen-lockfile --prod; \
+    else pnpm install --frozen-lockfile; \
+    fi
 
 COPY --from=builder /app/dist ./dist
+COPY src ./src
+COPY tsconfig.json ./
 
-USER app
 EXPOSE 4000
 
-CMD ["node", "dist/index.js"]
+CMD if [ "$NODE_ENV" = "development" ]; \
+    then pnpm dev; \
+    else node dist/index.js; \
+    fi

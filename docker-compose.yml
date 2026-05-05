@@ -30,10 +30,17 @@ services:
     restart: unless-stopped
 
   api:
-    build: ./api
+    build:
+      context: ./api
+      args:
+        - NODE_ENV=${NODE_ENV:-development}
     env_file:
       - ./envs/shared.env
       - ./envs/api.env
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+    volumes:
+      - ./api/src:/app/src
     depends_on:
       - coturn
     networks:
@@ -43,9 +50,17 @@ services:
   app:
     build:
       context: ./app
+      args:
+        - NODE_ENV=${NODE_ENV:-development}
     env_file:
       - ./envs/shared.env
       - ./envs/app.env
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - WATCHPACK_POLLING=true
+    volumes:
+      - ./app/src:/app/src
+      - ./app/public:/app/public
     depends_on:
       - api
     networks:
