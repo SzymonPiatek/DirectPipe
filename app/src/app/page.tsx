@@ -13,9 +13,9 @@ export default function HomePage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-6 p-8">
       <h1 className="text-4xl font-bold tracking-tight">DirectPipe</h1>
-      <p className="text-muted-foreground">Secure peer-to-peer file transfer</p>
+      <p className="text-muted-foreground">Bezpieczny transfer plików peer-to-peer</p>
       <Button size="lg" onClick={handleCreateRoom}>
-        Create room
+        Stwórz pokój
       </Button>
     </main>
   );

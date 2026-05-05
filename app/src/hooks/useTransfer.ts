@@ -70,7 +70,7 @@ export function useTransfer(channel: RTCDataChannel | null) {
 
         if (!needsFsaa) {
           if (meta.size > LARGE_FILE_THRESHOLD) {
-            toast.warning('File exceeds 2 GB — use Chrome for large file support.');
+            toast.warning('Plik przekracza 2 GB — użyj Chrome dla wsparcia dużych plików.');
           }
           // Auto-proceed with Blob accumulation
           const writer = createBlobWriter(meta);
@@ -95,11 +95,11 @@ export function useTransfer(channel: RTCDataChannel | null) {
       },
       onDone: () => {
         setState((prev) => ({ ...prev, status: 'done', transferredBytes: prev.totalBytes }));
-        toast.success('File transfer complete!');
+        toast.success('Transfer plików zakończony pomyślnie!');
       },
       onError: (err) => {
         setState((prev) => ({ ...prev, status: 'error' }));
-        toast.error(`Transfer error: ${err.message}`);
+        toast.error(`Błąd transferu: ${err.message}`);
       },
     });
 
