@@ -82,7 +82,7 @@ export function useTransfer(channel: RTCDataChannel | null) {
       onProgress: (received) => {
         setState((prev) => ({
           ...prev,
-          status: 'receiving',
+          status: prev.status === 'incoming' ? 'incoming' : 'receiving',
           transferredBytes: received,
           rate: updateRate(received),
         }));

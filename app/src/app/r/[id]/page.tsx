@@ -123,11 +123,16 @@ export default function RoomPage() {
           )}
 
           {/* Receiver — incoming file, needs save picker */}
-          {transfer.status === 'incoming' && transfer.needsSavePicker && (
+          {role === 'receiver' && transfer.needsSavePicker && (
             <div className="flex flex-col items-center gap-3 rounded-lg border p-6 text-center">
               <p className="text-sm font-medium">{transfer.fileName}</p>
               <p className="text-xs text-muted-foreground">{formatBytes(transfer.totalBytes)}</p>
               <Button onClick={accept}>Save as…</Button>
+              {transfer.transferredBytes > 0 && (
+                <p className="text-[10px] text-amber-500 animate-pulse">
+                  Click above to save the incoming data!
+                </p>
+              )}
             </div>
           )}
 
