@@ -1,4 +1,4 @@
-export const CHUNK_SIZE = 16 * 1024; // 16 KB — safe SCTP limit
+export const CHUNK_SIZE = 12 * 1024; // 12 KB — more resilient to MTU limits than 16 KB
 
 export interface TransferMeta {
   type: 'meta';
