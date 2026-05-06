@@ -15,7 +15,7 @@ export default function HomePage() {
       <h1 className="text-4xl font-bold tracking-tight">DirectPipe</h1>
       <p className="text-muted-foreground">Bezpieczny transfer plików peer-to-peer</p>
       <Button size="lg" onClick={handleCreateRoom}>
-          Stwórz pokój
+        Stwórz pokój
       </Button>
     </main>
   );

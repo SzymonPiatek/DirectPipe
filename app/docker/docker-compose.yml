@@ -7,7 +7,7 @@ x-app-base: &app-base
     - ../../envs/shared.env
     - ../../envs/app.env
   healthcheck:
-    test: ["CMD", "sh", "-c", "wget -qO- http://localhost:3000/ >/dev/null 2>&1 || exit 1"]
+    test: ['CMD', 'sh', '-c', 'wget -qO- http://localhost:3000/ >/dev/null 2>&1 || exit 1']
     interval: 10s
     timeout: 5s
     retries: 12
@@ -16,13 +16,13 @@ x-app-base: &app-base
 services:
   app:
     <<: *app-base
-    profiles: ["development"]
+    profiles: ['development']
     environment:
       NODE_ENV: development
-      CHOKIDAR_USEPOLLING: "true"
-      WATCHPACK_POLLING: "true"
+      CHOKIDAR_USEPOLLING: 'true'
+      WATCHPACK_POLLING: 'true'
     expose:
-      - "3000"
+      - '3000'
     volumes:
       - ..:/app
       - app_node_modules:/app/node_modules
@@ -35,13 +35,13 @@ services:
 
   app_prod:
     <<: *app-base
-    profiles: ["production"]
+    profiles: ['production']
     restart: unless-stopped
     environment:
       NODE_ENV: production
       PORT: 3000
     expose:
-      - "3000"
+      - '3000'
     networks:
       app:
         aliases:

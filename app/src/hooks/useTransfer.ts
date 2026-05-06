@@ -4,7 +4,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { sendFile } from '@/lib/transfer/sender';
 import { Receiver } from '@/lib/transfer/receiver';
-import { isFsaaSupported, openFsaaWriter, createBlobWriter, LARGE_FILE_THRESHOLD } from '@/lib/transfer/writer';
+import {
+  isFsaaSupported,
+  openFsaaWriter,
+  createBlobWriter,
+  LARGE_FILE_THRESHOLD,
+} from '@/lib/transfer/writer';
 import type { TransferMeta } from '@/lib/transfer/protocol';
 
 export type TransferStatus = 'idle' | 'sending' | 'incoming' | 'receiving' | 'done' | 'error';
@@ -135,7 +140,14 @@ export function useTransfer(channel: RTCDataChannel | null) {
       if (!channel) return;
 
       rateRef.current = { lastBytes: 0, lastTime: Date.now(), ema: 0 };
-      setState({ status: 'sending', fileName: file.name, totalBytes: file.size, transferredBytes: 0, rate: 0, needsSavePicker: false });
+      setState({
+        status: 'sending',
+        fileName: file.name,
+        totalBytes: file.size,
+        transferredBytes: 0,
+        rate: 0,
+        needsSavePicker: false,
+      });
 
       try {
         await sendFile(channel, file, (sent) => {

@@ -27,7 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
-      <Navbar/>
+        <Navbar />
         {children}
         <Toaster />
       </body>

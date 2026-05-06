@@ -77,12 +77,8 @@ export default function RoomPage() {
         <CardContent className="flex flex-col gap-4">
           {!connected && (
             <>
-              <p className="text-sm text-muted-foreground">
-                Udostępnij ten link drugiej osobie:
-              </p>
-              <code className="rounded bg-muted px-3 py-2 text-sm break-all">
-                {shareUrl}
-              </code>
+              <p className="text-sm text-muted-foreground">Udostępnij ten link drugiej osobie:</p>
+              <code className="rounded bg-muted px-3 py-2 text-sm break-all">{shareUrl}</code>
             </>
           )}
 
@@ -98,9 +94,16 @@ export default function RoomPage() {
               className={`flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed p-8 transition-colors ${
                 dragging ? 'border-primary bg-primary/5' : 'border-muted-foreground/30'
               }`}
-              onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragging(true);
+              }}
               onDragLeave={() => setDragging(false)}
-              onDrop={(e) => { e.preventDefault(); setDragging(false); handleFiles(e.dataTransfer.files); }}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragging(false);
+                handleFiles(e.dataTransfer.files);
+              }}
             >
               <p className="text-sm text-muted-foreground">Przeciągnij plik tutaj lub</p>
               <Button variant="outline" size="sm" onClick={() => inputRef.current?.click()}>
