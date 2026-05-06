@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,11 +10,11 @@ import { useRoom, type ConnectionStatus } from '@/hooks/useRoom';
 import { useTransfer } from '@/hooks/useTransfer';
 
 const STATUS_LABEL: Record<ConnectionStatus, string> = {
-  connecting: 'Connecting…',
-  waiting: 'Waiting for peer…',
-  p2p: 'Connected (P2P)',
-  relay: 'Connected (relay)',
-  failed: 'Connection failed',
+  connecting: 'Łączenie…',
+  waiting: 'Oczekiwanie na drugą osobę…',
+  p2p: 'Połączono (P2P)',
+  relay: 'Połączono (relay)',
+  failed: 'Błąd połączenia',
 };
 
 const STATUS_VARIANT: Record<
@@ -44,19 +44,16 @@ function formatEta(remaining: number, rate: number): string {
 
 export default function RoomPage() {
   const { id } = useParams<{ id: string }>();
-  const [shareUrl, setShareUrl] = useState(`/r/${id}`);
+  const shareUrl =
+    typeof window !== 'undefined' ? `${window.location.origin}/r/${id}` : `/r/${id}`;
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { status, role, channel } = useRoom(id);
   const { state: transfer, send, accept } = useTransfer(channel);
 
-  useEffect(() => {
-    setShareUrl(`${window.location.origin}/r/${id}`);
-  }, [id]);
-
   function handleFiles(files: FileList | null) {
-    if (files?.[0]) send(files[0]);
+    if (files?.[0]) void send(files[0]);
   }
 
   const connected = status === 'p2p' || status === 'relay';
@@ -67,20 +64,18 @@ export default function RoomPage() {
       : 0;
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-8">
+    <main className="flex flex-1 flex-col items-center justify-center p-8">
       <Card className="w-full max-w-md">
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
-          <CardTitle>Room</CardTitle>
+          <CardTitle>Pokój</CardTitle>
           <Badge variant={STATUS_VARIANT[status]}>{STATUS_LABEL[status]}</Badge>
         </CardHeader>
 
         <CardContent className="flex flex-col gap-4">
           {!connected && (
             <>
-              <p className="text-sm text-muted-foreground">
-                Share this link with the other person:
-              </p>
-              <code className="rounded bg-muted px-3 py-2 text-sm break-all">
+              <p className="text-sm text-muted-foreground">Udostępnij ten link drugiej osobie:</p>
+              <code suppressHydrationWarning className="rounded bg-muted px-3 py-2 text-sm break-all">
                 {shareUrl}
               </code>
             </>
@@ -88,7 +83,7 @@ export default function RoomPage() {
 
           {role && (
             <p className="text-xs text-muted-foreground">
-              You are the <strong>{role}</strong>.
+              Jesteś <strong>{role === 'initiator' ? 'inicjatorem' : 'odbiorcą'}</strong>.
             </p>
           )}
 
@@ -98,13 +93,20 @@ export default function RoomPage() {
               className={`flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed p-8 transition-colors ${
                 dragging ? 'border-primary bg-primary/5' : 'border-muted-foreground/30'
               }`}
-              onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragging(true);
+              }}
               onDragLeave={() => setDragging(false)}
-              onDrop={(e) => { e.preventDefault(); setDragging(false); handleFiles(e.dataTransfer.files); }}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragging(false);
+                handleFiles(e.dataTransfer.files);
+              }}
             >
-              <p className="text-sm text-muted-foreground">Drop a file here or</p>
+              <p className="text-sm text-muted-foreground">Przeciągnij plik tutaj lub</p>
               <Button variant="outline" size="sm" onClick={() => inputRef.current?.click()}>
-                Choose file
+                Wybierz plik
               </Button>
               <input
                 ref={inputRef}
@@ -118,7 +120,7 @@ export default function RoomPage() {
           {/* Receiver — waiting */}
           {connected && role === 'receiver' && transfer.status === 'idle' && (
             <p className="text-sm text-muted-foreground text-center py-4">
-              Waiting for the other person to send a file…
+              Oczekiwanie, aż druga osoba wyśle plik…
             </p>
           )}
 
@@ -127,10 +129,10 @@ export default function RoomPage() {
             <div className="flex flex-col items-center gap-3 rounded-lg border p-6 text-center">
               <p className="text-sm font-medium">{transfer.fileName}</p>
               <p className="text-xs text-muted-foreground">{formatBytes(transfer.totalBytes)}</p>
-              <Button onClick={accept}>Save as…</Button>
+              <Button onClick={accept}>Zapisz jako…</Button>
               {transfer.transferredBytes > 0 && (
                 <p className="text-[10px] text-amber-500 animate-pulse">
-                  Click above to save the incoming data!
+                  Kliknij powyżej, aby zapisać przychodzące dane!
                 </p>
               )}
             </div>
@@ -139,7 +141,7 @@ export default function RoomPage() {
           {/* Receiver — incoming, auto-proceeding (Blob path) */}
           {transfer.status === 'incoming' && !transfer.needsSavePicker && (
             <p className="text-sm text-muted-foreground text-center py-2">
-              Preparing to receive <strong>{transfer.fileName}</strong>…
+              Przygotowywanie do odebrania <strong>{transfer.fileName}</strong>…
             </p>
           )}
 
@@ -156,7 +158,7 @@ export default function RoomPage() {
                 <span>
                   {formatBytes(transfer.transferredBytes)} / {formatBytes(transfer.totalBytes)}
                   {transfer.rate > 0 &&
-                    ` · ETA ${formatEta(transfer.totalBytes - transfer.transferredBytes, transfer.rate)}`}
+                    ` · Pozostało ${formatEta(transfer.totalBytes - transfer.transferredBytes, transfer.rate)}`}
                 </span>
               </div>
             </div>
@@ -164,12 +166,12 @@ export default function RoomPage() {
 
           {transfer.status === 'done' && (
             <p className="text-sm text-center text-green-600 dark:text-green-400 font-medium">
-              {role === 'initiator' ? 'File sent.' : 'File received — check your downloads.'}
+              {role === 'initiator' ? 'Plik wysłany.' : 'Plik odebrany — sprawdź folder pobrane.'}
             </p>
           )}
 
           {transfer.status === 'error' && (
-            <p className="text-sm text-center text-destructive">Transfer failed.</p>
+            <p className="text-sm text-center text-destructive">Transfer nieudany.</p>
           )}
         </CardContent>
       </Card>

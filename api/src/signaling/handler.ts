@@ -1,6 +1,11 @@
 import { WebSocket } from 'ws';
 import type { Logger } from 'pino';
-import { ClientMessageSchema, type ClientMessage, type ServerMessage, MAX_MESSAGE_BYTES } from './protocol.js';
+import {
+  ClientMessageSchema,
+  type ClientMessage,
+  type ServerMessage,
+  MAX_MESSAGE_BYTES,
+} from './protocol.js';
 import { joinRoom, leaveRoom, relay } from './rooms.js';
 
 interface ConnectionState {
@@ -16,12 +21,7 @@ function send(ws: WebSocket, message: ServerMessage): void {
  * Handles a single `join` message: assigns a role and notifies the initiator
  * when the second peer arrives.
  */
-function handleJoin(
-  ws: WebSocket,
-  roomId: string,
-  state: ConnectionState,
-  log: Logger,
-): void {
+function handleJoin(ws: WebSocket, roomId: string, state: ConnectionState, log: Logger): void {
   if (state.joined) return;
 
   const role = joinRoom(roomId, ws);

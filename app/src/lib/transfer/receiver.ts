@@ -17,19 +17,20 @@ export class Receiver {
   private buffer: ArrayBuffer[] = [];
   private received = 0;
   private transferComplete = false;
-  
+
   // Queue to ensure messages are processed in order even if handlers are async
   private processingQueue: Promise<void> = Promise.resolve();
 
   constructor(private callbacks: ReceiverCallbacks) {}
 
   /**
-   * Main entry point for DataChannel messages. 
+   * Main entry point for DataChannel messages.
    * Wraps processing in a queue to prevent race conditions.
    */
   handleMessage = (event: MessageEvent): void => {
-    this.processingQueue = this.processingQueue.then(() => this.processMessage(event))
-      .catch(err => {
+    this.processingQueue = this.processingQueue
+      .then(() => this.processMessage(event))
+      .catch((err) => {
         console.error('Transfer processing error:', err);
         this.callbacks.onError(err instanceof Error ? err : new Error(String(err)));
       });
@@ -97,7 +98,7 @@ export class Receiver {
         this.callbacks.onDone();
       }
     });
-    
+
     return this.processingQueue;
   }
 

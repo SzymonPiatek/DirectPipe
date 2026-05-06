@@ -1,0 +1,57 @@
+x-app-base: &app-base
+  container_name: directpipe-app
+  build:
+    context: ..
+    dockerfile: docker/Dockerfile
+  env_file:
+    - ../../envs/shared.env
+    - ../../envs/app.env
+  healthcheck:
+    test: ['CMD', 'sh', '-c', 'wget -qO- http://localhost:3000/ >/dev/null 2>&1 || exit 1']
+    interval: 10s
+    timeout: 5s
+    retries: 12
+    start_period: 20s
+
+services:
+  app:
+    <<: *app-base
+    profiles: ['development']
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_WS_URL: ws://localhost:4000/ws
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+      CHOKIDAR_USEPOLLING: 'true'
+      WATCHPACK_POLLING: 'true'
+    expose:
+      - '3000'
+    volumes:
+      - ..:/app
+      - app_node_modules:/app/node_modules
+      - app_next:/app/.next
+    networks:
+      - app
+    depends_on:
+      api:
+        condition: service_healthy
+
+  app_prod:
+    <<: *app-base
+    profiles: ['production']
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+    expose:
+      - '3000'
+    networks:
+      app:
+        aliases:
+          - app
+    depends_on:
+      api_prod:
+        condition: service_healthy
+
+volumes:
+  app_node_modules:
+  app_next:
