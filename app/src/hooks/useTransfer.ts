@@ -109,9 +109,10 @@ export function useTransfer(channel: RTCDataChannel | null) {
     });
 
     receiverRef.current = receiver;
-    channel.onmessage = receiver.handleMessage;
+    channel.addEventListener('message', receiver.handleMessage);
 
     return () => {
+      channel.removeEventListener('message', receiver.handleMessage);
       receiverRef.current = null;
       incomingMetaRef.current = null;
     };

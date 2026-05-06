@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -44,19 +44,16 @@ function formatEta(remaining: number, rate: number): string {
 
 export default function RoomPage() {
   const { id } = useParams<{ id: string }>();
-  const [shareUrl, setShareUrl] = useState(`/r/${id}`);
+  const shareUrl =
+    typeof window !== 'undefined' ? `${window.location.origin}/r/${id}` : `/r/${id}`;
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { status, role, channel } = useRoom(id);
   const { state: transfer, send, accept } = useTransfer(channel);
 
-  useEffect(() => {
-    setShareUrl(`${window.location.origin}/r/${id}`);
-  }, [id]);
-
   function handleFiles(files: FileList | null) {
-    if (files?.[0]) send(files[0]);
+    if (files?.[0]) void send(files[0]);
   }
 
   const connected = status === 'p2p' || status === 'relay';
@@ -78,7 +75,9 @@ export default function RoomPage() {
           {!connected && (
             <>
               <p className="text-sm text-muted-foreground">Udostępnij ten link drugiej osobie:</p>
-              <code className="rounded bg-muted px-3 py-2 text-sm break-all">{shareUrl}</code>
+              <code suppressHydrationWarning className="rounded bg-muted px-3 py-2 text-sm break-all">
+                {shareUrl}
+              </code>
             </>
           )}
 
